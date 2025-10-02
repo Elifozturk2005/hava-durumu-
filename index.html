@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Türkiye Şehirleri Hava Durumu </title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+    /* Genel Ayarlar */
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 30px;
+      color: #fff;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      font-size: 32px;
+    }
+
+    /* Şehir Ekleme Alanı */
+    #city-input-container {
+      text-align: center;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    #city-input {
+      padding: 12px 15px;
+      width: 220px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      transition: box-shadow 0.3s ease;
+    }
+    #city-input:focus {
+      box-shadow: 0 0 10px #fff;
+    }
+
+    #add-city {
+      background: linear-gradient(45deg, #6a82fb, #fc5c7d);
+      border: none;
+      color: white;
+      padding: 12px 25px;
+      font-weight: 600;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(252, 92, 125, 0.4);
+      cursor: pointer;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #add-city:hover {
+      background: linear-gradient(45deg, #fc5c7d, #6a82fb);
+      box-shadow: 0 8px 25px rgba(106, 130, 251, 0.6);
+    }
+
+    /* Hava Durumu Kartları */
+    #weather-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 25px;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .city-weather {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      width: 320px;
+      padding: 30px 40px;
+      text-align: center;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .city-weather:hover {
+      transform: translateY(-15px) scale(1.05);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .city-weather h2 {
+      margin: 0 0 20px 0;
+      font-weight: 700;
+      font-size: 28px;
+      letter-spacing: 2px;
+    }
+
+    .icon img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      user-select: none;
+    }
+
+    .city-weather p {
+      font-weight: 500;
+      font-size: 18px;
+      margin: 10px 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .city-weather p span {
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    /* Responsive Tasarım */
+    @media (max-width: 768px) {
+      #weather-container {
+        max-width: 90vw;
+        gap: 18px;
+      }
+      .city-weather {
+        width: 100%;
+        max-width: 400px;
+        padding: 25px 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #city-input {
+        width: 100%;
+        max-width: 280px;
+      }
+      #city-input-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      #add-city {
+        width: 100%;
+        max-width: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Türkiye Şehirleri Hava Durumu </h1>
+
+  <div id="city-input-container">
+    <input type="text" id="city-input" placeholder="Şehir adı yazın..." />
+    <button id="add-city">Ekle</button>
+  </div>
+
+  <div id="weather-container"></div>
+
+  <script>
+    const apiKey = '362a80ab135237617a5fdac2e89e06f6';
+    const container = document.getElementById('weather-container');
+    const cityInput = document.getElementById('city-input');
+    const addCityBtn = document.getElementById('add-city');
+
+    let cities = ['Istanbul', 'Izmir', 'Ankara', 'Antalya', 'Bursa', 'Balikesir', 'Mugla'];
+
+    function temizleSehirAdi(name) {
+      return name.replace(" Province", "");
+    }
+
+    function getWeatherForCity(city) {
+      if (Array.from(container.children).some(div => div.querySelector('h2').textContent.toLowerCase() === city.toLowerCase())) {
+        alert(`${city} zaten listede.`);
+        return;
+      }
+
+      const cityDiv = document.createElement('div');
+      cityDiv.className = 'city-weather';
+      cityDiv.innerHTML = `<h2>${city}</h2><div class="icon">⌛</div><p>Durum: <span>Yükleniyor...</span></p>`;
+      container.appendChild(cityDiv);
+
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=tr`)
+        .then(res => {
+          if (!res.ok) throw new Error('Veri alınamadı');
+          return res.json();
+        })
+        .then(data => {
+          const displayName = temizleSehirAdi(data.name);
+          const desc = data.weather[0].description;
+          const iconCode = data.weather[0].icon;
+          const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+          cityDiv.innerHTML = `
+            <h2>${displayName}</h2>
+            <div class="icon"><img src="${iconUrl}" alt="${desc}" draggable="false"></div>
+            <p>Durum: <span>${desc}</span></p>
+            <p>Sıcaklık: <span>${Math.round(data.main.temp)} °C</span></p>
+            <p>Nem: <span>${data.main.humidity} %</span></p>
+            <p>Rüzgar Hızı: <span>${data.wind.speed} m/s</span></p>
+          `;
+        })
+        .catch(e => {
+          cityDiv.innerHTML = `<h2>${city}</h2><p>Veri alınırken hata oluştu.</p>`;
+          console.error(e);
+        });
+    }
+
+    function loadAllCities() {
+      container.innerHTML = '';
+      cities.forEach(city => getWeatherForCity(city));
+    }
+
+    loadAllCities();
+
+    addCityBtn.addEventListener('click', () => {
+      const newCity = cityInput.value.trim();
+      if (newCity === '') {
+        alert('Lütfen bir şehir adı girin.');
+        return;
+      }
+      if (cities.some(c => c.toLowerCase() === newCity.toLowerCase())) {
+        alert('Bu şehir zaten listede.');
+        cityInput.value = '';
+        return;
+      }
+      cities.push(newCity);
+      getWeatherForCity(newCity);
+      cityInput.value = '';
+    });
+
+    cityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addCityBtn.click();
+      }
+    });
+  </script>
+
+</body>
+</html>
